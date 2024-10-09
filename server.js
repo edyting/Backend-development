@@ -1,11 +1,15 @@
+require("dotenv").config(); 
+const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const express = require("express");
-const db = require("better-sqlite3")("ourApp.db");
+const db = require("better-sqlite3")("ourApp.db"); 
 db.pragma("journal_mode = WAL");
 
 // database setup 
 const createTables = db.transaction(()=>{
     db.prepare(`
-        CREATE TABLE IF NOT EXISTS user(
+        CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username STRING NOT NULL UNIQUE,
         password STRING NOT NULL 
@@ -21,9 +25,26 @@ app.set("view engine","ejs");
 
 // middleware ****
 app.use(express.static("public"));
+
+app.use(cookieParser());
+
 // to make errors array global and accessible before the form is submitted else there will b e an error of errors undefined
 app.use((req,res,next)=>{
     res.locals.errors=[];
+
+    // trying to decode incoming cookie
+    try {
+        const decoded = jwt.verify(req.cookies.ourSimpleApp,process.env.JWTSECRET);
+        req.user = decoded;
+    } catch (error) {
+        req.user = false
+    }
+    
+    res.locals.user = req.user
+    console.log(req.user);
+    
+
+
     next();
 })
 
@@ -80,11 +101,33 @@ app.post('/register',(req,res)=>{
         return res.render("homepage",{errors})
     }
 
-    res.send("Thank You")
-
     // save new user to database
 
+    // **** hashing passwords with bcrypt
+    const salt = bcrypt.genSaltSync(10);
+    req.body.password = bcrypt.hashSync(req.body.password,salt);
+
+    const ourStatement = db.prepare(" INSERT INTO users (username,password) VALUES (?,?)")
+        const result = ourStatement.run(req.body.username,req.body.password);
+
+        // get the id of user to set cookie
+        const lookupStatement = db.prepare("SELECT * FROM users WHERE ROWID = ? ")
+
+        const ourUser = lookupStatement.get(result.lastInsertRowid);
+
     // log the user in by giving them a cookie
+    const ourTokenValue = jwt.sign({exp: Math.floor(Date.now() / 1000) + 60 * 60 *60, userid: ourUser.id, username: ourUser.username },process.env.JWTSECRET);
+    console.log(ourUser);
+     
+
+        res.cookie("ourSimpleApp", ourTokenValue,{
+            httpOnly: true,
+            secure : true,
+            sameSite:"strict", // eleminates to some extent, the need to setup csrf tokens 
+            maxAge:1000*60*60*24 // cookie to be live for 24 hours
+        })
+
+    res.send("Thank You")
 });
 
 app.listen(5000,console.log("listening on port 5000..."))
