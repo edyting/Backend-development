@@ -35,7 +35,7 @@ app.use((req,res,next)=>{
     // trying to decode incoming cookie
     try {
         const decoded = jwt.verify(req.cookies.ourSimpleApp,process.env.JWTSECRET);
-        req.user = decoded;
+        req.user = decoded; //either evalutes to true or else false
     } catch (error) {
         req.user = false
     }
@@ -52,7 +52,10 @@ app.use((req,res,next)=>{
 app.use(express.urlencoded({extended:false}))
 
 app.get('/',(req,res)=>{
-    res.render("homepage")
+   if(req.user){
+    return res.render("dashboard")
+   }
+   res.render("homepage")
 });
 
 app.get('/login',(req,res)=>{
