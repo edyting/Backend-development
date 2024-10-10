@@ -1,34 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="/style.css"/>
-</head>
+    <%- include("includes/head")  %>
 <body>
-    <header>
-        <h2>
-            <a href="/">Edyting</a>
-        </h2>
-        <nav>
-            <% if(user){ %>
-                <a href="/create-post"> Create Post</a>
-                <a href="/logout"> Log Out</a>
-            <% } else{ %>
-                <a href="/login">Log In</a>
-            <% } %>
-        </nav>
-    </header>
+    <%- include("includes/header")  %>
 
     <main>
-     <h2> Welcome to your dashboard</h2>
-     <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore fugiat quia, a et voluptates obcaecati assumenda, quae hic dolorum, voluptas qui nulla eligendi aperiam nemo ab libero cum incidunt minima culpa blanditiis exercitationem. Expedita, animi! Obcaecati ab nobis reiciendis. Totam, fuga. Ducimus enim deleniti distinctio reprehenderit facilis ea molestias illum voluptate architecto repellat corporis sint quam, soluta quaerat laudantium modi debitis? Consectetur, sequi est placeat dolor sit molestias vitae at.</p>
+     <% if(posts.length == 0){ %>
+        <h4>Hello <%= user.username %>,you have no posts </h4>
+     <% } else { %>
+        <h4>Hello <%= user.username %>, here are your posts </h4>
+    <% } %>
+    <ul>
+        <% posts.forEach( post => { %>
+            <li><a href="/post/<%= post.id %>">
+                <%= post.title %>
+            </a> on <%= new Date(post.createdDate).getMonth() + 1 %>/<%= new Date(post.createdDate).getDate() %>/<%= new Date(post.createdDate).getFullYear()%> </li>
+      <% } ) %>
+    </ul>
     </main>
-    <p>hello from homepage</p>
+    
 
-    <footer>
-        <small>&copy; Edyting Co</small>
-    </footer>
+    <%- include("includes/footer")  %>
 </body>
 </html>
